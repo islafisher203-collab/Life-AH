@@ -23,6 +23,8 @@ header{padding:16px 24px;background:linear-gradient(135deg,#1a1a2e,#16213e);bord
 .bbl{max-width:72%;padding:12px 16px;border-radius:16px;line-height:1.7;font-size:15px;word-break:break-word}
 .ai .bbl{background:#1a1a2e;border:1px solid #2d2d5e;border-radius:4px 16px 16px 16px}
 .user .bbl{background:linear-gradient(135deg,#667eea,#764ba2);border-radius:16px 4px 16px 16px}
+.imgbbl{max-width:72%;padding:8px;background:#1a1a2e;border:1px solid #2d2d5e;border-radius:4px 16px 16px 16px}
+.imgbbl img{width:100%;border-radius:12px;display:block}
 .typ{background:#1a1a2e;border:1px solid #2d2d5e;border-radius:4px 16px 16px 16px;padding:14px 18px;display:flex;gap:5px;align-items:center}
 .typ span{width:7px;height:7px;background:#667eea;border-radius:50%;animation:bc 1.2s infinite}
 .typ span:nth-child(2){animation-delay:.2s}
@@ -38,6 +40,7 @@ header{padding:16px 24px;background:linear-gradient(135deg,#1a1a2e,#16213e);bord
 .wel{text-align:center;padding:50px 20px;color:#555}
 .wel .ic{font-size:50px;margin-bottom:16px}
 .wel h2{color:#667eea;margin-bottom:8px;font-size:22px}
+.wel p{font-size:13px;line-height:1.8;color:#444}
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-thumb{background:#222;border-radius:4px}
 </style>
@@ -52,12 +55,12 @@ header{padding:16px 24px;background:linear-gradient(135deg,#1a1a2e,#16213e);bord
   <div class="wel">
     <div class="ic">✨</div>
     <h2>Welcome to Life-AH</h2>
-    <p>Your intelligent AI companion<br>Ask anything in any language!</p>
+    <p>Chat in any language!<br>Say "draw a sunset" or "image of a cat" to generate images!</p>
   </div>
 </div>
 <div id="bottom">
   <div id="box">
-    <input id="inp" type="text" placeholder="Ask me anything..." autocomplete="off">
+    <input id="inp" type="text" placeholder="Ask anything or say 'draw a cat'..." autocomplete="off">
     <button id="btn">
       <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
     </button>
@@ -78,6 +81,24 @@ function addBubble(text, role) {
   var b = document.createElement('div');
   b.className = 'bbl';
   b.innerHTML = text.split('\n').join('<br>');
+  d.appendChild(a);
+  d.appendChild(b);
+  chatDiv.appendChild(d);
+  chatDiv.scrollTop = chatDiv.scrollHeight;
+}
+
+function addImageBubble(url) {
+  var d = document.createElement('div');
+  d.className = 'msg ai';
+  var a = document.createElement('div');
+  a.className = 'av';
+  a.textContent = '✨';
+  var b = document.createElement('div');
+  b.className = 'imgbbl';
+  var img = document.createElement('img');
+  img.src = url;
+  img.alt = 'Generated image';
+  b.appendChild(img);
   d.appendChild(a);
   d.appendChild(b);
   chatDiv.appendChild(d);
@@ -122,7 +143,12 @@ function sendMessage() {
   .then(function(r) { return r.json(); })
   .then(function(d) {
     removeTyping();
-    addBubble(d.reply, 'ai');
+    if (d.image_url) {
+      addBubble(d.reply, 'ai');
+      addImageBubble(d.image_url);
+    } else {
+      addBubble(d.reply, 'ai');
+    }
     msgList.push({role: 'assistant', content: d.reply});
     inp.focus();
   })
