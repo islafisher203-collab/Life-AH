@@ -80,41 +80,78 @@ header{padding:16px 24px;background:linear-gradient(135deg,#1a1a2e,#16213e);bord
   </div>
 </div>
 <script>
-var inp=document.getElementById('inp');
-var btn=document.getElementById('btn');
-var chat=document.getElementById('chat');
-var hist=[];
-var busy=false;
-function send(){
-  var msg=inp.value.trim();
-  if(!msg||busy)return;
-  busy=true;
-  var w=document.querySelector('.wel');
-  if(w)w.remove();
-  inp.value='';
-  addB(msg,'user');
-  addT();
-  hist.push({role:'user',content:msg});
-  fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({history:hist})})
-  .then(function(r){return r.json();})
-  .then(function(d){remT();addB(d.reply,'ai');hist.push({role:'assistant',content:d.reply});busy=false;inp.focus();})
-  .catch(function(){remT();addB('Error. Try again.','ai');busy=false;});
+var msgList = [];
+var inp = document.getElementById('inp');
+var btn = document.getElementById('btn');
+var chatDiv = document.getElementById('chat');
+
+function addBubble(text, role) {
+  var d = document.createElement('div');
+  d.className = 'msg ' + role;
+  var a = document.createElement('div');
+  a.className = 'av';
+  a.textContent = role === 'ai' ? '✨' : '👤';
+  var b = document.createElement('div');
+  b.className = 'bbl';
+  b.innerHTML = text.replace(/\n/g, '<br>');
+  d.appendChild(a);
+  d.appendChild(b);
+  chatDiv.appendChild(d);
+  chatDiv.scrollTop = chatDiv.scrollHeight;
 }
-function addB(t,r){
-  var d=document.createElement('div');d.className='msg '+r;
-  var a=document.createElement('div');a.className='av';a.textContent=r==='ai'?'✨':'👤';
-  var b=document.createElement('div');b.className='bbl';b.innerHTML=t.replace(/\n/g,'<br>');
-  d.appendChild(a);d.appendChild(b);chat.appendChild(d);chat.scrollTop=chat.scrollHeight;
+
+function addTyping() {
+  var d = document.createElement('div');
+  d.className = 'msg ai';
+  d.id = 'typDiv';
+  var a = document.createElement('div');
+  a.className = 'av';
+  a.textContent = '✨';
+  var t = document.createElement('div');
+  t.className = 'typ';
+  t.innerHTML = '<span></span><span></span><span></span>';
+  d.appendChild(a);
+  d.appendChild(t);
+  chatDiv.appendChild(d);
+  chatDiv.scrollTop = chatDiv.scrollHeight;
 }
-function addT(){
-  var d=document.createElement('div');d.className='msg ai';d.id='typ';
-  var a=document.createElement('div');a.className='av';a.textContent='✨';
-  var t=document.createElement('div');t.className='typ';t.innerHTML='<span></span><span></span><span></span>';
-  d.appendChild(a);d.appendChild(t);chat.appendChild(d);chat.scrollTop=chat.scrollHeight;
+
+function removeTyping() {
+  var t = document.getElementById('typDiv');
+  if (t) t.remove();
 }
-function remT(){var t=document.getElementById('typ');if(t)t.remove();}
-btn.addEventListener('click',send);
-inp.addEventListener('keypress',function(e){if(e.key==='Enter'){send();}});
+
+function sendMessage() {
+  var msg = inp.value.trim();
+  if (!msg) return;
+  var w = document.querySelector('.wel');
+  if (w) w.remove();
+  inp.value = '';
+  addBubble(msg, 'user');
+  addTyping();
+  msgList.push({role: 'user', content: msg});
+  fetch('/chat', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({msgs: msgList})
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    removeTyping();
+    addBubble(d.reply, 'ai');
+    msgList.push({role: 'assistant', content: d.reply});
+    inp.focus();
+  })
+  .catch(function(e) {
+    removeTyping();
+    addBubble('Error: ' + e.message, 'ai');
+  });
+}
+
+btn.addEventListener('click', sendMessage);
+inp.addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') sendMessage();
+});
 inp.focus();
 </script>
 </body>
@@ -123,9 +160,9 @@ inp.focus();
 @app.route('/chat', methods=['POST'])
 def chat():
     data = request.json
-    history = data.get('history', [])
-    msgs = [{"role": "system", "content": SYSTEM}] + history
-    r = client.chat.completions.create(model="openai/gpt-oss-20b", messages=msgs)
+    msgs = data.get('msgs', [])
+    full = [{"role": "system", "content": SYSTEM}] + msgs
+    r = client.chat.completions.create(model="openai/gpt-oss-20b", messages=full)
     return jsonify({"reply": r.choices[0].message.content})
 
 if __name__ == '__main__':
