@@ -11,9 +11,7 @@ English only, Roman Urdu only, Urdu script only — match exactly.
 NEVER use Hindi or Devanagari. Ever.
 Be friendly, smart and helpful like a best friend."""
 
-@app.route('/')
-def home():
-    return render_template_string("""<!DOCTYPE html>
+PAGE = """<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -60,13 +58,13 @@ header{padding:16px 24px;background:linear-gradient(135deg,#1a1a2e,#16213e);bord
 </head>
 <body>
 <header>
-  <div class="logo">✨</div>
+  <div class="logo">&#10024;</div>
   <div class="ht"><h1>Life-AH</h1><p>Advanced AI Assistant by Abuzar</p></div>
   <div class="st"><div class="dot"></div>Online</div>
 </header>
 <div id="chat">
   <div class="wel">
-    <div class="ic">✨</div>
+    <div class="ic">&#10024;</div>
     <h2>Welcome to Life-AH</h2>
     <p>Your intelligent AI companion<br>Ask anything in any language!</p>
   </div>
@@ -90,10 +88,10 @@ function addBubble(text, role) {
   d.className = 'msg ' + role;
   var a = document.createElement('div');
   a.className = 'av';
-  a.textContent = role === 'ai' ? '✨' : '👤';
+  a.textContent = role === 'ai' ? String.fromCodePoint(10024) : String.fromCodePoint(128100);
   var b = document.createElement('div');
   b.className = 'bbl';
-  b.innerHTML = text.replace(/\n/g, '<br>');
+  b.innerHTML = text.split('\n').join('<br>');
   d.appendChild(a);
   d.appendChild(b);
   chatDiv.appendChild(d);
@@ -106,7 +104,7 @@ function addTyping() {
   d.id = 'typDiv';
   var a = document.createElement('div');
   a.className = 'av';
-  a.textContent = '✨';
+  a.textContent = String.fromCodePoint(10024);
   var t = document.createElement('div');
   t.className = 'typ';
   t.innerHTML = '<span></span><span></span><span></span>';
@@ -144,18 +142,24 @@ function sendMessage() {
   })
   .catch(function(e) {
     removeTyping();
-    addBubble('Error: ' + e.message, 'ai');
+    addBubble('Connection error. Try again.', 'ai');
   });
 }
 
 btn.addEventListener('click', sendMessage);
 inp.addEventListener('keypress', function(e) {
-  if (e.key === 'Enter') sendMessage();
+  if (e.key === 'Enter') {
+    sendMessage();
+  }
 });
 inp.focus();
 </script>
 </body>
-</html>""")
+</html>"""
+
+@app.route('/')
+def home():
+    return PAGE
 
 @app.route('/chat', methods=['POST'])
 def chat():
