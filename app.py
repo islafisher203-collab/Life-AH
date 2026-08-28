@@ -5,15 +5,13 @@ import os
 client = Groq(api_key=os.environ["GROQ_API_KEY"])
 app = Flask(__name__)
 
-SYSTEM = """You are Life-AH, an advanced AI assistant.
-You were created by Abuzar — a talented developer.
+SYSTEM = """You are Life-AH, an advanced AI assistant created by Abuzar.
 Reply ONLY in the same language user writes in.
 - English → English only
-- Roman Urdu → Roman Urdu only  
+- Roman Urdu → Roman Urdu only
 - Urdu script → Urdu script only
 - NEVER use Hindi or Devanagari. Ever.
-Be friendly, smart and helpful like a best friend.
-You can help with writing, coding, ideas, advice — anything."""
+Be friendly, smart and helpful like a best friend."""
 
 HTML = """<!DOCTYPE html>
 <html lang="en">
@@ -36,8 +34,8 @@ header{padding:16px 24px;background:linear-gradient(135deg,#1a1a2e,#16213e);bord
 @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .msg.user{flex-direction:row-reverse}
 .avatar{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.ai-av{background:linear-gradient(135deg,#667eea,#764ba2);box-shadow:0 4px 12px rgba(102,126,234,0.3)}
-.user-av{background:linear-gradient(135deg,#f093fb,#f5576c);box-shadow:0 4px 12px rgba(245,87,108,0.3)}
+.ai-av{background:linear-gradient(135deg,#667eea,#764ba2)}
+.user-av{background:linear-gradient(135deg,#f093fb,#f5576c)}
 .bubble{max-width:70%;padding:14px 18px;border-radius:16px;line-height:1.7;font-size:15px}
 .ai .bubble{background:#1a1a2e;border:1px solid #2d2d5e;border-radius:4px 16px 16px 16px}
 .user .bubble{background:linear-gradient(135deg,#667eea,#764ba2);border-radius:16px 4px 16px 16px}
@@ -52,8 +50,8 @@ header{padding:16px 24px;background:linear-gradient(135deg,#1a1a2e,#16213e);bord
 #inputbox:focus-within{border-color:#667eea}
 textarea{flex:1;background:transparent;border:none;outline:none;color:#fff;font-size:15px;resize:none;max-height:120px;font-family:'Segoe UI',sans-serif;line-height:1.5}
 textarea::placeholder{color:#444}
-#send{width:40px;height:40px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .2s,box-shadow .2s}
-#send:hover{transform:scale(1.05);box-shadow:0 4px 15px rgba(102,126,234,0.4)}
+#send{width:40px;height:40px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .2s}
+#send:hover{transform:scale(1.05)}
 #send svg{width:18px;height:18px;fill:white}
 .welcome{text-align:center;padding:40px 20px;color:#444}
 .welcome .icon{font-size:48px;margin-bottom:16px}
@@ -82,7 +80,7 @@ textarea::placeholder{color:#444}
 <div id="bottom">
   <div id="inputbox">
     <textarea id="inp" rows="1" placeholder="Ask me anything..."></textarea>
-    <button id="send">
+    <button id="send" onclick="send()">
       <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
     </button>
   </div>
@@ -114,24 +112,32 @@ async function send(){
   if(!msg)return;
   const welcome=document.querySelector('.welcome');
   if(welcome)welcome.remove();
-  inp.value='';inp.style.height='auto';
+  inp.value='';
+  inp.style.height='auto';
   addMsg(msg,'user');
   showTyping();
   history.push({role:'user',content:msg});
   try{
-    const r=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({history})});
-    const d=await r.json();
+    const r=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({history:history})});
+    const data=await r.json();
     document.getElementById('typing')?.remove();
-    addMsg(d.reply,'ai');
-    history.push({role:'assistant',content:d.reply});
+    addMsg(data.reply,'ai');
+    history.push({role:'assistant',content:data.reply});
   }catch(e){
     document.getElementById('typing')?.remove();
     addMsg('Connection error. Please try again.','ai');
   }
 }
-document.getElementById('send').onclick=send;
-inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
-inp.addEventListener('input',()=>{inp.style.height='auto';inp.style.height=inp.scrollHeight+'px';});
+inp.addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&!e.shiftKey){
+    e.preventDefault();
+    send();
+  }
+});
+inp.addEventListener('input',function(){
+  this.style.height='auto';
+  this.style.height=this.scrollHeight+'px';
+});
 </script>
 </body>
 </html>"""
@@ -145,8 +151,11 @@ def chat():
     data = request.json
     history = data.get('history', [])
     msgs = [{"role": "system", "content": SYSTEM}] + history
-    r = client.chat.completions.create(model="openai/gpt-oss-20b", messages=msgs)
+    r = client.chat.completions.create(
+        model="openai/gpt-oss-20b",
+        messages=msgs
+    )
     return jsonify({"reply": r.choices[0].message.content})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=7860)
+    app.run(host='0.0.0.0', port=7860, threaded=True)
