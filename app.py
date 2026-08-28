@@ -12,7 +12,7 @@ English only, Roman Urdu only, Urdu script only — match exactly.
 NEVER use Hindi or Devanagari. Ever.
 Be friendly, smart and helpful like a best friend.
 
-IMPORTANT: If the user asks to draw, create, generate, or make an image/photo/picture, 
+IMPORTANT: If the user asks to draw, create, generate, or make an image/photo/picture,
 reply with ONLY this exact format on the first line:
 IMAGE_REQUEST: <english description of the image>
 Then on the next line write a short friendly message saying you are generating it."""
@@ -35,7 +35,7 @@ def chat():
         prompt = lines[0].replace("IMAGE_REQUEST:", "").strip()
         friendly_msg = lines[1].strip() if len(lines) > 1 else "Generating your image..."
         encoded = urllib.parse.quote(prompt)
-        image_url = f"https://image.pollinations.ai/prompt/{encoded}?width=512&height=512&nologo=true"
+        image_url = f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=1024&model=flux&nologo=true&seed={os.urandom(4).hex()}"
         reply = friendly_msg
 
     return jsonify({"reply": reply, "image_url": image_url})
