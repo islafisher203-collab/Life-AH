@@ -18,7 +18,21 @@ def chat(message, history):
         msgs.append({"role": "user", "content": h[0]})
         msgs.append({"role": "assistant", "content": h[1]})
     msgs.append({"role": "user", "content": message})
-    r = client.chat.completions.create(model="openai/gpt-oss-20b", messages=msgs)
-    return r.choices[0].message.content
+    r = client.chat.completions.create(
+        model="openai/gpt-oss-20b",
+        messages=msgs
+    )
+    reply = r.choices[0].message.content
+    history = history + [[message, reply]]
+    return "", history
 
-gr.ChatInterface(fn=chat, title="Life-AH ✨", description="Your AI Friend!").launch(server_name="0.0.0.0", server_port=7860)
+with gr.Blocks(title="Life-AH") as demo:
+    gr.Markdown("# Life-AH ✨\nYour AI Friend!")
+    chatbot = gr.Chatbot(height=500)
+    with gr.Row():
+        txt = gr.Textbox(placeholder="Kuch bhi likho...", scale=4, show_label=False)
+        btn = gr.Button("Send ➤", scale=1, variant="primary")
+    btn.click(chat, [txt, chatbot], [txt, chatbot])
+    txt.submit(chat, [txt, chatbot], [txt, chatbot])
+
+demo.launch(server_name="0.0.0.0", server_port=7860)
