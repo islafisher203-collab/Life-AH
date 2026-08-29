@@ -23,8 +23,9 @@ header{padding:16px 24px;background:linear-gradient(135deg,#1a1a2e,#16213e);bord
 .bbl{max-width:72%;padding:12px 16px;border-radius:16px;line-height:1.7;font-size:15px;word-break:break-word}
 .ai .bbl{background:#1a1a2e;border:1px solid #2d2d5e;border-radius:4px 16px 16px 16px}
 .user .bbl{background:linear-gradient(135deg,#667eea,#764ba2);border-radius:16px 4px 16px 16px}
-.imgbbl{max-width:72%;padding:8px;background:#1a1a2e;border:1px solid #2d2d5e;border-radius:4px 16px 16px 16px}
-.imgbbl img{width:100%;border-radius:12px;display:block;cursor:pointer}
+.imgwrap{max-width:72%;background:#1a1a2e;border:1px solid #2d2d5e;border-radius:4px 16px 16px 16px;overflow:hidden}
+.imgwrap img{width:100%;display:block;cursor:pointer}
+.imgwrap .imgload{padding:20px;text-align:center;color:#667eea;font-size:13px}
 .typ{background:#1a1a2e;border:1px solid #2d2d5e;border-radius:4px 16px 16px 16px;padding:14px 18px;display:flex;gap:5px;align-items:center}
 .typ span{width:7px;height:7px;background:#667eea;border-radius:50%;animation:bc 1.2s infinite}
 .typ span:nth-child(2){animation-delay:.2s}
@@ -33,11 +34,10 @@ header{padding:16px 24px;background:linear-gradient(135deg,#1a1a2e,#16213e);bord
 #bottom{padding:14px 20px;background:#111;border-top:1px solid #222;flex-shrink:0}
 #preview-area{display:none;padding:8px 0;position:relative;width:fit-content}
 #preview-area img{height:60px;border-radius:8px;border:2px solid #667eea}
-#remove-img{position:absolute;top:-6px;right:-6px;background:#f5576c;border:none;color:white;width:20px;height:20px;border-radius:50%;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center}
+#remove-img{position:absolute;top:-6px;right:-6px;background:#f5576c;border:none;color:white;width:20px;height:20px;border-radius:50%;cursor:pointer;font-size:12px}
 #box{display:flex;gap:10px;background:#1a1a1a;border:1px solid #333;border-radius:14px;padding:10px 14px;align-items:center}
 #box:focus-within{border-color:#667eea}
 #upload-btn{background:none;border:none;cursor:pointer;color:#667eea;font-size:20px;padding:2px 4px;flex-shrink:0}
-#upload-btn:hover{color:#f093fb}
 #inp{flex:1;background:transparent;border:none;outline:none;color:#fff;font-size:15px;font-family:'Segoe UI',sans-serif}
 #inp::placeholder{color:#444}
 #btn{width:38px;height:38px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -47,7 +47,6 @@ header{padding:16px 24px;background:linear-gradient(135deg,#1a1a2e,#16213e);bord
 .wel .ic{font-size:50px;margin-bottom:16px}
 .wel h2{color:#667eea;margin-bottom:8px;font-size:22px}
 .wel p{font-size:13px;line-height:1.8;color:#444}
-.edit-tag{font-size:11px;color:#667eea;margin-top:4px;text-align:center}
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-thumb{background:#222;border-radius:4px}
 </style>
@@ -70,8 +69,7 @@ header{padding:16px 24px;background:linear-gradient(135deg,#1a1a2e,#16213e);bord
 <div id="bottom">
   <div id="preview-area">
     <img id="preview-img" src="" alt="preview">
-    <button id="remove-img">✕</button>
-    <div class="edit-tag">📝 Ab likho kya karna hai is photo ke saath</div>
+    <button id="remove-img">x</button>
   </div>
   <div id="box">
     <button id="upload-btn" title="Photo upload karo">📎</button>
@@ -100,7 +98,6 @@ document.getElementById('remove-img').addEventListener('click', function() {
   uploadedImageData = null;
   previewArea.style.display = 'none';
   previewImg.src = '';
-  inp.placeholder = 'Chat karo ya photo upload karke edit karo...';
 });
 
 fileInput.addEventListener('change', function(e) {
@@ -111,7 +108,7 @@ fileInput.addEventListener('change', function(e) {
     uploadedImageData = ev.target.result;
     previewImg.src = uploadedImageData;
     previewArea.style.display = 'block';
-    inp.placeholder = 'Kya karna hai? e.g. "make it night time" ya "add snow"';
+    inp.placeholder = 'Kya karna hai? e.g. "add snow" ya "make it night"';
     inp.focus();
   };
   reader.readAsDataURL(file);
@@ -133,21 +130,47 @@ function addBubble(text, role) {
   chatDiv.scrollTop = chatDiv.scrollHeight;
 }
 
-function addImageBubble(url, caption) {
+function addImageBubble(url) {
   var d = document.createElement('div');
   d.className = 'msg ai';
   var a = document.createElement('div');
   a.className = 'av';
   a.textContent = '✨';
-  var b = document.createElement('div');
-  b.className = 'imgbbl';
-  var img = document.createElement('img');
-  img.src = url;
-  img.alt = caption || 'Image';
-  img.onclick = function() { window.open(url, '_blank'); };
-  b.appendChild(img);
+  var wrap = document.createElement('div');
+  wrap.className = 'imgwrap';
+
+  if (url.startsWith('data:')) {
+    var img = document.createElement('img');
+    img.src = url;
+    img.onclick = function() {
+      var w = window.open();
+      w.document.write('<img src="' + url + '" style="max-width:100%">');
+    };
+    wrap.appendChild(img);
+  } else {
+    var loading = document.createElement('div');
+    loading.className = 'imgload';
+    loading.textContent = 'Image generate ho rahi hai, thoda wait karo...';
+    wrap.appendChild(loading);
+    var img = new Image();
+    img.onload = function() {
+      loading.remove();
+      img.style.cursor = 'pointer';
+      img.onclick = function() {
+        var w = window.open();
+        w.document.write('<img src="' + url + '" style="max-width:100%">');
+      };
+      wrap.appendChild(img);
+      chatDiv.scrollTop = chatDiv.scrollHeight;
+    };
+    img.onerror = function() {
+      loading.textContent = 'Image load nahi hui, retry karo.';
+    };
+    img.src = url;
+  }
+
   d.appendChild(a);
-  d.appendChild(b);
+  d.appendChild(wrap);
   chatDiv.appendChild(d);
   chatDiv.scrollTop = chatDiv.scrollHeight;
 }
@@ -158,16 +181,16 @@ function addUserImageBubble(url) {
   var a = document.createElement('div');
   a.className = 'av';
   a.textContent = '👤';
-  var b = document.createElement('div');
-  b.className = 'imgbbl';
-  b.style.background = 'linear-gradient(135deg,#667eea,#764ba2)';
+  var wrap = document.createElement('div');
+  wrap.className = 'imgwrap';
+  wrap.style.background = 'linear-gradient(135deg,#667eea,#764ba2)';
   var img = document.createElement('img');
   img.src = url;
   img.style.maxHeight = '200px';
   img.style.width = 'auto';
-  b.appendChild(img);
+  wrap.appendChild(img);
   d.appendChild(a);
-  d.appendChild(b);
+  d.appendChild(wrap);
   chatDiv.appendChild(d);
   chatDiv.scrollTop = chatDiv.scrollHeight;
 }
@@ -203,7 +226,6 @@ function sendMessage() {
     addUserImageBubble(uploadedImageData);
     if (msg) addBubble(msg, 'user');
     addTyping();
-
     var imageData = uploadedImageData;
     var instruction = msg || 'enhance this image';
     uploadedImageData = null;
@@ -221,7 +243,7 @@ function sendMessage() {
     .then(function(d) {
       removeTyping();
       addBubble(d.reply, 'ai');
-      if (d.image_url) addImageBubble(d.image_url, 'Edited image');
+      if (d.image_url) addImageBubble(d.image_url);
       inp.focus();
     })
     .catch(function() {
@@ -245,7 +267,7 @@ function sendMessage() {
       removeTyping();
       if (d.image_url) {
         addBubble(d.reply, 'ai');
-        addImageBubble(d.image_url, 'Generated image');
+        addImageBubble(d.image_url);
       } else {
         addBubble(d.reply, 'ai');
       }
