@@ -51,7 +51,7 @@ def analyze_and_edit(image_base64, instruction):
             img_data = image_base64
 
         response = client.chat.completions.create(
-            model="llama-4-scout-17b-16e-instruct",
+            model="llama-3.2-11b-vision-preview",
             messages=[
                 {
                     "role": "user",
