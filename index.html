@@ -1,4 +1,8 @@
-function addImageBubble(url) {
+function addImageBubble(prompt) {
+  var seed = Math.floor(Math.random() * 99999);
+  var encoded = encodeURIComponent(prompt);
+  var url = 'https://image.pollinations.ai/prompt/' + encoded + '?width=1024&height=1024&model=flux&nologo=true&seed=' + seed;
+  
   var d = document.createElement('div');
   d.className = 'msg ai';
   var a = document.createElement('div');
@@ -9,7 +13,7 @@ function addImageBubble(url) {
 
   var loading = document.createElement('div');
   loading.className = 'imgload';
-  loading.textContent = 'Image generate ho rahi hai... (30-60 sec lag sakte hain)';
+  loading.textContent = 'Image generate ho rahi hai... (30-60 sec)';
   wrap.appendChild(loading);
 
   var attempts = 0;
@@ -19,24 +23,21 @@ function addImageBubble(url) {
     img.onload = function() {
       loading.remove();
       img.style.cursor = 'pointer';
-      img.onclick = function() {
-        var w = window.open();
-        w.document.write('<html><body style="margin:0;background:#000"><img src="' + url + '" style="max-width:100%;display:block;margin:auto"></body></html>');
-      };
+      img.onclick = function() { window.open(url, '_blank'); };
       wrap.appendChild(img);
       chatDiv.scrollTop = chatDiv.scrollHeight;
     };
     img.onerror = function() {
-      if (attempts < 3) {
-        loading.textContent = 'Retry ' + attempts + '/3...';
-        setTimeout(tryLoad, 5000);
+      if (attempts < 4) {
+        loading.textContent = 'Retry ' + attempts + '/3... thoda wait karo';
+        setTimeout(tryLoad, 8000);
       } else {
-        loading.innerHTML = 'Image load nahi hui. <a href="' + url + '" target="_blank" style="color:#667eea">Direct link</a>';
+        loading.innerHTML = 'Image load nahi hui. <a href="' + url + '" target="_blank" style="color:#667eea">Yahan click karo</a>';
       }
     };
-    img.src = url + '&t=' + Date.now();
+    img.src = url;
   }
-  tryLoad();
+  setTimeout(tryLoad, 3000);
 
   d.appendChild(a);
   d.appendChild(wrap);
