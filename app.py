@@ -2,26 +2,38 @@ from groq import Groq
 from flask import Flask, request, jsonify, send_from_directory
 import os
 import urllib.parse
-import requests as req
 import base64
+import random
 
 client = Groq(api_key=os.environ.get("GROQ_API_KEY", ""))
 app = Flask(__name__, static_folder='.')
 
-SYSTEM = """You are Life-AH, an advanced AI assistant created by Abuzar.
-Reply ONLY in the same language user writes in.
-English only, Roman Urdu only, Urdu script only — match exactly.
-NEVER use Hindi or Devanagari. Ever.
-Be friendly, smart and helpful like a best friend.
+SYSTEM = """You are Life-AH, a smart and friendly AI assistant created by Abuzar.
 
-IMPORTANT: If the user asks to draw, create, generate, or make an image/photo/picture,
-reply with ONLY this exact format on the first line:
-IMAGE_REQUEST: <detailed english description of the image>
-Then on the next line write a short friendly message."""
+LANGUAGE RULES — VERY IMPORTANT:
+- Most users write in Roman Urdu mixed with English — this is normal Pakistani style. Match it exactly.
+- Example: if user writes "yar kya hal hai aaj" → reply in same Roman Urdu style
+- Example: if user writes "bro what's up" → reply in English
+- Example: if user writes in Urdu script → reply in Urdu script
+- NEVER use Hindi (Devanagari script) — ever
+- NEVER switch language unless user switches first
+- Be casual, friendly, like a real Pakistani dost — use "yaar", "bhai", "achi baat" naturally
+
+CAPABILITIES:
+- Chat in any language or style
+- Help with coding, writing, ideas, advice, facts
+- Generate images when asked (use IMAGE_REQUEST format)
+- Analyze and edit uploaded photos
+
+IMAGE GENERATION — if user asks to draw/create/generate/make any image or photo:
+Reply EXACTLY like this:
+IMAGE_REQUEST: <detailed english description>
+<friendly message in user's language>"""
 
 def generate_image(prompt):
+    seed = random.randint(1, 99999)
     encoded = urllib.parse.quote(prompt)
-    return f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=1024&model=flux&nologo=true&enhance=true&seed={int.from_bytes(os.urandom(4), 'big')}"
+    return f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=1024&model=flux&nologo=true&seed={seed}&enhance=true"
 
 def analyze_and_edit(image_base64, instruction):
     try:
@@ -42,7 +54,7 @@ def analyze_and_edit(image_base64, instruction):
                         },
                         {
                             "type": "text",
-                            "text": f"Describe this image in great detail. Then create a new detailed image generation prompt that includes ALL original details but with this modification applied: '{instruction}'. Output ONLY the new prompt, nothing else. No thinking tags, no explanation."
+                            "text": f"Describe this image in great detail. Then write a new image generation prompt that keeps ALL original details but applies this change: '{instruction}'. Output ONLY the prompt. No thinking, no explanation."
                         }
                     ]
                 }
@@ -50,7 +62,7 @@ def analyze_and_edit(image_base64, instruction):
             max_tokens=400
         )
         new_prompt = response.choices[0].message.content.strip()
-        if '<think>' in new_prompt:
+        if '</think>' in new_prompt:
             new_prompt = new_prompt.split('</think>')[-1].strip()
         return generate_image(new_prompt), new_prompt
     except Exception as e:
@@ -71,7 +83,7 @@ def chat():
     if reply.startswith("IMAGE_REQUEST:"):
         lines = reply.split('\n', 1)
         prompt = lines[0].replace("IMAGE_REQUEST:", "").strip()
-        friendly_msg = lines[1].strip() if len(lines) > 1 else "Generating your image..."
+        friendly_msg = lines[1].strip() if len(lines) > 1 else "Image ban rahi hai..."
         image_url = generate_image(prompt)
         reply = friendly_msg
     return jsonify({"reply": reply, "image_url": image_url})
@@ -83,9 +95,9 @@ def edit():
     instruction = data.get('instruction', 'enhance this image')
     result, prompt = analyze_and_edit(image, instruction)
     if result:
-        reply = "Ye rahi edited photo! Life-AH ne image samjhi aur edit apply ki. 🎨"
+        reply = "Lo yaar, edited photo! 🎨"
     else:
-        reply = f"Error: {prompt}"
+        reply = f"Masla aa gaya: {prompt}"
     return jsonify({"reply": reply, "image_url": result})
 
 if __name__ == '__main__':
