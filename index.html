@@ -1,135 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Life-AH</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',sans-serif;background:#0d0d0d;color:#fff;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-header{padding:16px 24px;background:linear-gradient(135deg,#1a1a2e,#16213e);border-bottom:1px solid #1e3a5f;display:flex;align-items:center;gap:14px;flex-shrink:0}
-.logo{width:42px;height:42px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px}
-.ht h1{font-size:20px;font-weight:700;background:linear-gradient(90deg,#667eea,#f093fb);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.ht p{font-size:12px;color:#667eea;margin-top:2px}
-.st{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;color:#4ade80}
-.dot{width:8px;height:8px;background:#4ade80;border-radius:50%;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-#chat{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
-.msg{display:flex;gap:10px}
-.msg.user{flex-direction:row-reverse}
-.av{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.ai .av{background:linear-gradient(135deg,#667eea,#764ba2)}
-.user .av{background:linear-gradient(135deg,#f093fb,#f5576c)}
-.bbl{max-width:72%;padding:12px 16px;border-radius:16px;line-height:1.7;font-size:15px;word-break:break-word}
-.ai .bbl{background:#1a1a2e;border:1px solid #2d2d5e;border-radius:4px 16px 16px 16px}
-.user .bbl{background:linear-gradient(135deg,#667eea,#764ba2);border-radius:16px 4px 16px 16px}
-.imgwrap{max-width:72%;background:#1a1a2e;border:1px solid #2d2d5e;border-radius:4px 16px 16px 16px;overflow:hidden}
-.imgwrap img{width:100%;display:block;cursor:pointer}
-.imgwrap .imgload{padding:20px;text-align:center;color:#667eea;font-size:13px}
-.typ{background:#1a1a2e;border:1px solid #2d2d5e;border-radius:4px 16px 16px 16px;padding:14px 18px;display:flex;gap:5px;align-items:center}
-.typ span{width:7px;height:7px;background:#667eea;border-radius:50%;animation:bc 1.2s infinite}
-.typ span:nth-child(2){animation-delay:.2s}
-.typ span:nth-child(3){animation-delay:.4s}
-@keyframes bc{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-7px)}}
-#bottom{padding:14px 20px;background:#111;border-top:1px solid #222;flex-shrink:0}
-#preview-area{display:none;padding:8px 0;position:relative;width:fit-content}
-#preview-area img{height:60px;border-radius:8px;border:2px solid #667eea}
-#remove-img{position:absolute;top:-6px;right:-6px;background:#f5576c;border:none;color:white;width:20px;height:20px;border-radius:50%;cursor:pointer;font-size:12px}
-#box{display:flex;gap:10px;background:#1a1a1a;border:1px solid #333;border-radius:14px;padding:10px 14px;align-items:center}
-#box:focus-within{border-color:#667eea}
-#upload-btn{background:none;border:none;cursor:pointer;color:#667eea;font-size:20px;padding:2px 4px;flex-shrink:0}
-#inp{flex:1;background:transparent;border:none;outline:none;color:#fff;font-size:15px;font-family:'Segoe UI',sans-serif}
-#inp::placeholder{color:#444}
-#btn{width:38px;height:38px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-#btn svg{width:17px;height:17px;fill:white}
-#file-input{display:none}
-.wel{text-align:center;padding:40px 20px;color:#555}
-.wel .ic{font-size:50px;margin-bottom:16px}
-.wel h2{color:#667eea;margin-bottom:8px;font-size:22px}
-.wel p{font-size:13px;line-height:1.8;color:#444}
-::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-thumb{background:#222;border-radius:4px}
-</style>
-</head>
-<body>
-<header>
-  <div class="logo">✨</div>
-  <div class="ht"><h1>Life-AH</h1><p>Advanced AI Assistant by Abuzar</p></div>
-  <div class="st"><div class="dot"></div>Online</div>
-</header>
-<div id="chat">
-  <div class="wel">
-    <div class="ic">✨</div>
-    <h2>Welcome to Life-AH</h2>
-    <p>Chat in any language!<br>
-    📎 Photo upload karke edit karwao<br>
-    🎨 "draw a sunset" likh kar image banwao</p>
-  </div>
-</div>
-<div id="bottom">
-  <div id="preview-area">
-    <img id="preview-img" src="" alt="preview">
-    <button id="remove-img">x</button>
-  </div>
-  <div id="box">
-    <button id="upload-btn" title="Photo upload karo">📎</button>
-    <input type="file" id="file-input" accept="image/*">
-    <input id="inp" type="text" placeholder="Chat karo ya photo upload karke edit karo..." autocomplete="off">
-    <button id="btn">
-      <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
-    </button>
-  </div>
-</div>
-<script>
-var msgList = [];
-var inp = document.getElementById('inp');
-var btn = document.getElementById('btn');
-var chatDiv = document.getElementById('chat');
-var fileInput = document.getElementById('file-input');
-var previewArea = document.getElementById('preview-area');
-var previewImg = document.getElementById('preview-img');
-var uploadedImageData = null;
-
-document.getElementById('upload-btn').addEventListener('click', function() {
-  fileInput.click();
-});
-
-document.getElementById('remove-img').addEventListener('click', function() {
-  uploadedImageData = null;
-  previewArea.style.display = 'none';
-  previewImg.src = '';
-});
-
-fileInput.addEventListener('change', function(e) {
-  var file = e.target.files[0];
-  if (!file) return;
-  var reader = new FileReader();
-  reader.onload = function(ev) {
-    uploadedImageData = ev.target.result;
-    previewImg.src = uploadedImageData;
-    previewArea.style.display = 'block';
-    inp.placeholder = 'Kya karna hai? e.g. "add snow" ya "make it night"';
-    inp.focus();
-  };
-  reader.readAsDataURL(file);
-  fileInput.value = '';
-});
-
-function addBubble(text, role) {
-  var d = document.createElement('div');
-  d.className = 'msg ' + role;
-  var a = document.createElement('div');
-  a.className = 'av';
-  a.textContent = role === 'ai' ? '✨' : '👤';
-  var b = document.createElement('div');
-  b.className = 'bbl';
-  b.innerHTML = text.split('\n').join('<br>');
-  d.appendChild(a);
-  d.appendChild(b);
-  chatDiv.appendChild(d);
-  chatDiv.scrollTop = chatDiv.scrollHeight;
-}
-
 function addImageBubble(url) {
   var d = document.createElement('div');
   d.className = 'msg ai';
@@ -139,153 +7,39 @@ function addImageBubble(url) {
   var wrap = document.createElement('div');
   wrap.className = 'imgwrap';
 
-  if (url.startsWith('data:')) {
-    var img = document.createElement('img');
-    img.src = url;
-    img.onclick = function() {
-      var w = window.open();
-      w.document.write('<img src="' + url + '" style="max-width:100%">');
-    };
-    wrap.appendChild(img);
-  } else {
-    var loading = document.createElement('div');
-    loading.className = 'imgload';
-    loading.textContent = 'Image generate ho rahi hai, thoda wait karo...';
-    wrap.appendChild(loading);
+  var loading = document.createElement('div');
+  loading.className = 'imgload';
+  loading.textContent = 'Image generate ho rahi hai... (30-60 sec lag sakte hain)';
+  wrap.appendChild(loading);
+
+  var attempts = 0;
+  function tryLoad() {
+    attempts++;
     var img = new Image();
     img.onload = function() {
       loading.remove();
       img.style.cursor = 'pointer';
       img.onclick = function() {
         var w = window.open();
-        w.document.write('<img src="' + url + '" style="max-width:100%">');
+        w.document.write('<html><body style="margin:0;background:#000"><img src="' + url + '" style="max-width:100%;display:block;margin:auto"></body></html>');
       };
       wrap.appendChild(img);
       chatDiv.scrollTop = chatDiv.scrollHeight;
     };
     img.onerror = function() {
-      loading.textContent = 'Image load nahi hui, retry karo.';
-    };
-    img.src = url;
-  }
-
-  d.appendChild(a);
-  d.appendChild(wrap);
-  chatDiv.appendChild(d);
-  chatDiv.scrollTop = chatDiv.scrollHeight;
-}
-
-function addUserImageBubble(url) {
-  var d = document.createElement('div');
-  d.className = 'msg user';
-  var a = document.createElement('div');
-  a.className = 'av';
-  a.textContent = '👤';
-  var wrap = document.createElement('div');
-  wrap.className = 'imgwrap';
-  wrap.style.background = 'linear-gradient(135deg,#667eea,#764ba2)';
-  var img = document.createElement('img');
-  img.src = url;
-  img.style.maxHeight = '200px';
-  img.style.width = 'auto';
-  wrap.appendChild(img);
-  d.appendChild(a);
-  d.appendChild(wrap);
-  chatDiv.appendChild(d);
-  chatDiv.scrollTop = chatDiv.scrollHeight;
-}
-
-function addTyping() {
-  var d = document.createElement('div');
-  d.className = 'msg ai';
-  d.id = 'typDiv';
-  var a = document.createElement('div');
-  a.className = 'av';
-  a.textContent = '✨';
-  var t = document.createElement('div');
-  t.className = 'typ';
-  t.innerHTML = '<span></span><span></span><span></span>';
-  d.appendChild(a);
-  d.appendChild(t);
-  chatDiv.appendChild(d);
-  chatDiv.scrollTop = chatDiv.scrollHeight;
-}
-
-function removeTyping() {
-  var t = document.getElementById('typDiv');
-  if (t) t.remove();
-}
-
-function sendMessage() {
-  var msg = inp.value.trim();
-  if (!msg && !uploadedImageData) return;
-  var w = document.querySelector('.wel');
-  if (w) w.remove();
-
-  if (uploadedImageData) {
-    addUserImageBubble(uploadedImageData);
-    if (msg) addBubble(msg, 'user');
-    addTyping();
-    var imageData = uploadedImageData;
-    var instruction = msg || 'enhance this image';
-    uploadedImageData = null;
-    previewArea.style.display = 'none';
-    previewImg.src = '';
-    inp.value = '';
-    inp.placeholder = 'Chat karo ya photo upload karke edit karo...';
-
-    fetch('/edit', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({image: imageData, instruction: instruction})
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      removeTyping();
-      addBubble(d.reply, 'ai');
-      if (d.image_url) addImageBubble(d.image_url);
-      inp.focus();
-    })
-    .catch(function() {
-      removeTyping();
-      addBubble('Error. Try again.', 'ai');
-    });
-
-  } else {
-    inp.value = '';
-    addBubble(msg, 'user');
-    addTyping();
-    msgList.push({role: 'user', content: msg});
-
-    fetch('/chat', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({msgs: msgList})
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      removeTyping();
-      if (d.image_url) {
-        addBubble(d.reply, 'ai');
-        addImageBubble(d.image_url);
+      if (attempts < 3) {
+        loading.textContent = 'Retry ' + attempts + '/3...';
+        setTimeout(tryLoad, 5000);
       } else {
-        addBubble(d.reply, 'ai');
+        loading.innerHTML = 'Image load nahi hui. <a href="' + url + '" target="_blank" style="color:#667eea">Direct link</a>';
       }
-      msgList.push({role: 'assistant', content: d.reply});
-      inp.focus();
-    })
-    .catch(function() {
-      removeTyping();
-      addBubble('Connection error. Try again.', 'ai');
-    });
+    };
+    img.src = url + '&t=' + Date.now();
   }
-}
+  tryLoad();
 
-btn.addEventListener('click', sendMessage);
-inp.addEventListener('keypress', function(e) {
-  if (e.key === 'Enter') sendMessage();
-});
-inp.focus();
-</script>
-</body>
-</html>
+  d.appendChild(a);
+  d.appendChild(wrap);
+  chatDiv.appendChild(d);
+  chatDiv.scrollTop = chatDiv.scrollHeight;
+}
