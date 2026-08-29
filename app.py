@@ -43,29 +43,36 @@ def generate_image(prompt):
     encoded = urllib.parse.quote(prompt)
     return f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=1024&model=flux&nologo=true"
 
-def edit_image(image_base64, instruction):
+def analyze_and_edit(image_base64, instruction):
     try:
         if ',' in image_base64:
-            image_base64 = image_base64.split(',')[1]
-        image_bytes = base64.b64decode(image_base64)
-        API_URL = "https://api-inference.huggingface.co/models/timbrooks/instruct-pix2pix"
-        headers = {"Authorization": f"Bearer {HF_TOKEN}"}
-        payload = {
-            "inputs": instruction,
-            "parameters": {
-                "image": base64.b64encode(image_bytes).decode('utf-8'),
-                "num_inference_steps": 20,
-                "image_guidance_scale": 1.5,
-                "guidance_scale": 7
-            }
-        }
-        response = req.post(API_URL, headers=headers, json=payload, timeout=90)
-        if response.status_code == 200:
-            img_data = base64.b64encode(response.content).decode('utf-8')
-            return f"data:image/jpeg;base64,{img_data}"
-    except:
-        pass
-    return None
+            img_data = image_base64.split(',')[1]
+        else:
+            img_data = image_base64
+
+        response = client.chat.completions.create(
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/jpeg;base64,{img_data}"}
+                        },
+                        {
+                            "type": "text",
+                            "text": f"Describe this image in great detail in one paragraph, then apply this edit: '{instruction}'. Write a new detailed image generation prompt that includes all original details but with the edit applied. Output ONLY the new prompt, nothing else."
+                        }
+                    ]
+                }
+            ],
+            max_tokens=300
+        )
+        new_prompt = response.choices[0].message.content.strip()
+        return generate_image(new_prompt), new_prompt
+    except Exception as e:
+        return None, str(e)
 
 @app.route('/')
 def home():
@@ -92,11 +99,11 @@ def edit():
     data = request.json
     image = data.get('image', '')
     instruction = data.get('instruction', 'enhance this image')
-    result = edit_image(image, instruction)
+    result, prompt = analyze_and_edit(image, instruction)
     if result:
-        reply = "Ye rahi edited photo! 🎨"
+        reply = "Ye rahi edited photo! Image ko samjha aur edit apply kiya. 🎨"
     else:
-        reply = "Image edit nahi ho saka, dobara try karo."
+        reply = f"Error: {prompt}"
     return jsonify({"reply": reply, "image_url": result})
 
 if __name__ == '__main__':
