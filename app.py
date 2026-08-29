@@ -51,7 +51,7 @@ def analyze_and_edit(image_base64, instruction):
             img_data = image_base64
 
         response = client.chat.completions.create(
-            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            model="llama-4-scout-17b-16e-instruct",
             messages=[
                 {
                     "role": "user",
@@ -62,7 +62,7 @@ def analyze_and_edit(image_base64, instruction):
                         },
                         {
                             "type": "text",
-                            "text": f"Describe this image in great detail in one paragraph, then apply this edit: '{instruction}'. Write a new detailed image generation prompt that includes all original details but with the edit applied. Output ONLY the new prompt, nothing else."
+                            "text": f"Describe this image in detail, then create a new image generation prompt that includes all original details but with this edit applied: '{instruction}'. Output ONLY the new prompt, nothing else."
                         }
                     ]
                 }
@@ -101,7 +101,7 @@ def edit():
     instruction = data.get('instruction', 'enhance this image')
     result, prompt = analyze_and_edit(image, instruction)
     if result:
-        reply = "Ye rahi edited photo! Image ko samjha aur edit apply kiya. 🎨"
+        reply = "Ye rahi edited photo! 🎨"
     else:
         reply = f"Error: {prompt}"
     return jsonify({"reply": reply, "image_url": result})
