@@ -6,7 +6,6 @@ import requests as req
 import base64
 
 client = Groq(api_key=os.environ.get("GROQ_API_KEY", ""))
-HF_TOKEN = os.environ.get("HF_TOKEN", "")
 app = Flask(__name__, static_folder='.')
 
 SYSTEM = """You are Life-AH, an advanced AI assistant created by Abuzar.
@@ -21,27 +20,8 @@ IMAGE_REQUEST: <detailed english description of the image>
 Then on the next line write a short friendly message."""
 
 def generate_image(prompt):
-    try:
-        API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0"
-        headers = {"Authorization": f"Bearer {HF_TOKEN}"}
-        payload = {
-            "inputs": prompt,
-            "parameters": {
-                "negative_prompt": "blurry, low quality, distorted",
-                "num_inference_steps": 30,
-                "guidance_scale": 7.5,
-                "width": 1024,
-                "height": 1024
-            }
-        }
-        response = req.post(API_URL, headers=headers, json=payload, timeout=60)
-        if response.status_code == 200:
-            img_data = base64.b64encode(response.content).decode('utf-8')
-            return f"data:image/jpeg;base64,{img_data}"
-    except:
-        pass
     encoded = urllib.parse.quote(prompt)
-    return f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=1024&model=flux&nologo=true"
+    return f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=1024&model=flux&nologo=true&enhance=true&seed={int.from_bytes(os.urandom(4), 'big')}"
 
 def analyze_and_edit(image_base64, instruction):
     try:
@@ -62,14 +42,16 @@ def analyze_and_edit(image_base64, instruction):
                         },
                         {
                             "type": "text",
-                            "text": f"Describe this image in detail, then create a new image generation prompt that includes all original details but with this edit applied: '{instruction}'. Output ONLY the new prompt, nothing else."
+                            "text": f"Describe this image in great detail. Then create a new detailed image generation prompt that includes ALL original details but with this modification applied: '{instruction}'. Output ONLY the new prompt, nothing else. No thinking tags, no explanation."
                         }
                     ]
                 }
             ],
-            max_tokens=300
+            max_tokens=400
         )
         new_prompt = response.choices[0].message.content.strip()
+        if '<think>' in new_prompt:
+            new_prompt = new_prompt.split('</think>')[-1].strip()
         return generate_image(new_prompt), new_prompt
     except Exception as e:
         return None, str(e)
@@ -101,7 +83,7 @@ def edit():
     instruction = data.get('instruction', 'enhance this image')
     result, prompt = analyze_and_edit(image, instruction)
     if result:
-        reply = "Ye rahi edited photo! 🎨"
+        reply = "Ye rahi edited photo! Life-AH ne image samjhi aur edit apply ki. 🎨"
     else:
         reply = f"Error: {prompt}"
     return jsonify({"reply": reply, "image_url": result})
