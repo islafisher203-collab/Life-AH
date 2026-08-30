@@ -6,82 +6,102 @@
 <title>Life-AH</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',sans-serif;background:#0d0d0d;color:#fff;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-header{padding:16px 24px;background:linear-gradient(135deg,#1a1a2e,#16213e);border-bottom:1px solid #1e3a5f;display:flex;align-items:center;gap:14px;flex-shrink:0}
-.logo{width:42px;height:42px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px}
-.ht h1{font-size:20px;font-weight:700;background:linear-gradient(90deg,#667eea,#f093fb);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.ht p{font-size:12px;color:#667eea;margin-top:2px}
+body{font-family:'Segoe UI',sans-serif;background:#0d0d0d;color:#fff;height:100vh;display:flex;overflow:hidden}
+#sidebar{width:260px;background:#111;border-right:1px solid #1e1e1e;display:flex;flex-direction:column;flex-shrink:0}
+#sidebar-header{padding:16px;border-bottom:1px solid #1e1e1e}
+#new-chat-btn{width:100%;padding:10px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:10px;color:white;font-size:14px;cursor:pointer;font-weight:600}
+#new-chat-btn:hover{opacity:0.9}
+#chat-list{flex:1;overflow-y:auto;padding:8px}
+.chat-item{padding:10px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:#aaa;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent}
+.chat-item:hover{background:#1a1a1a;color:#fff}
+.chat-item.active{background:#1a1a2e;border-color:#2d2d5e;color:#fff}
+#sidebar-footer{padding:12px;border-top:1px solid #1e1e1e;font-size:11px;color:#444;text-align:center}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+header{padding:14px 20px;background:linear-gradient(135deg,#1a1a2e,#16213e);border-bottom:1px solid #1e3a5f;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.logo{width:36px;height:36px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.ht h1{font-size:18px;font-weight:700;background:linear-gradient(90deg,#667eea,#f093fb);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.ht p{font-size:11px;color:#667eea}
 .st{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;color:#4ade80}
-.dot{width:8px;height:8px;background:#4ade80;border-radius:50%;animation:pulse 2s infinite}
+.dot{width:7px;height:7px;background:#4ade80;border-radius:50%;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 #chat{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
 .msg{display:flex;gap:10px}
 .msg.user{flex-direction:row-reverse}
-.av{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.av{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
 .ai .av{background:linear-gradient(135deg,#667eea,#764ba2)}
 .user .av{background:linear-gradient(135deg,#f093fb,#f5576c)}
-.bbl{max-width:72%;padding:12px 16px;border-radius:16px;line-height:1.7;font-size:15px;word-break:break-word}
-.ai .bbl{background:#1a1a2e;border:1px solid #2d2d5e;border-radius:4px 16px 16px 16px}
-.user .bbl{background:linear-gradient(135deg,#667eea,#764ba2);border-radius:16px 4px 16px 16px}
-.imgwrap{max-width:72%;background:#1a1a2e;border:1px solid #2d2d5e;border-radius:4px 16px 16px 16px;overflow:hidden}
+.bbl{max-width:70%;padding:11px 15px;border-radius:14px;line-height:1.7;font-size:14px;word-break:break-word}
+.ai .bbl{background:#1a1a2e;border:1px solid #2d2d5e;border-radius:4px 14px 14px 14px}
+.user .bbl{background:linear-gradient(135deg,#667eea,#764ba2);border-radius:14px 4px 14px 14px}
+.imgwrap{max-width:70%;background:#1a1a2e;border:1px solid #2d2d5e;border-radius:4px 14px 14px 14px;overflow:hidden}
 .imgwrap img{width:100%;display:block;cursor:pointer}
-.imgload{padding:16px;text-align:center;color:#667eea;font-size:13px}
-.typ{background:#1a1a2e;border:1px solid #2d2d5e;border-radius:4px 16px 16px 16px;padding:14px 18px;display:flex;gap:5px;align-items:center}
-.typ span{width:7px;height:7px;background:#667eea;border-radius:50%;animation:bc 1.2s infinite}
+.imgload{padding:14px;text-align:center;color:#667eea;font-size:12px}
+.typ{background:#1a1a2e;border:1px solid #2d2d5e;border-radius:4px 14px 14px 14px;padding:12px 16px;display:flex;gap:5px;align-items:center}
+.typ span{width:6px;height:6px;background:#667eea;border-radius:50%;animation:bc 1.2s infinite}
 .typ span:nth-child(2){animation-delay:.2s}
 .typ span:nth-child(3){animation-delay:.4s}
-@keyframes bc{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-7px)}}
-#bottom{padding:14px 20px;background:#111;border-top:1px solid #222;flex-shrink:0}
-#preview-area{display:none;padding:8px 0;position:relative;width:fit-content}
-#preview-area img{height:60px;border-radius:8px;border:2px solid #667eea}
-#remove-img{position:absolute;top:-6px;right:-6px;background:#f5576c;border:none;color:white;width:20px;height:20px;border-radius:50%;cursor:pointer;font-size:12px}
-#box{display:flex;gap:10px;background:#1a1a1a;border:1px solid #333;border-radius:14px;padding:10px 14px;align-items:center}
+@keyframes bc{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+#bottom{padding:12px 16px;background:#111;border-top:1px solid #222;flex-shrink:0}
+#preview-area{display:none;padding:6px 0;position:relative;width:fit-content}
+#preview-area img{height:50px;border-radius:6px;border:2px solid #667eea}
+#remove-img{position:absolute;top:-5px;right:-5px;background:#f5576c;border:none;color:white;width:18px;height:18px;border-radius:50%;cursor:pointer;font-size:11px}
+#box{display:flex;gap:8px;background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:9px 12px;align-items:center}
 #box:focus-within{border-color:#667eea}
-#upload-btn{background:none;border:none;cursor:pointer;color:#667eea;font-size:20px;padding:2px 4px;flex-shrink:0}
-#inp{flex:1;background:transparent;border:none;outline:none;color:#fff;font-size:15px;font-family:'Segoe UI',sans-serif}
+#upload-btn{background:none;border:none;cursor:pointer;color:#667eea;font-size:18px;padding:2px;flex-shrink:0}
+#inp{flex:1;background:transparent;border:none;outline:none;color:#fff;font-size:14px;font-family:'Segoe UI',sans-serif}
 #inp::placeholder{color:#444}
-#btn{width:38px;height:38px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-#btn svg{width:17px;height:17px;fill:white}
+#btn{width:34px;height:34px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+#btn svg{width:15px;height:15px;fill:white}
 #file-input{display:none}
 .wel{text-align:center;padding:40px 20px;color:#555}
-.wel .ic{font-size:50px;margin-bottom:16px}
-.wel h2{color:#667eea;margin-bottom:8px;font-size:22px}
+.wel .ic{font-size:44px;margin-bottom:14px}
+.wel h2{color:#667eea;margin-bottom:8px;font-size:20px}
 .wel p{font-size:13px;line-height:1.8;color:#444}
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-thumb{background:#222;border-radius:4px}
 </style>
 </head>
 <body>
-<header>
-  <div class="logo">✨</div>
-  <div class="ht"><h1>Life-AH</h1><p>Advanced AI Assistant by Abuzar</p></div>
-  <div class="st"><div class="dot"></div>Online</div>
-</header>
-<div id="chat">
-  <div class="wel">
-    <div class="ic">✨</div>
-    <h2>Welcome to Life-AH</h2>
-    <p>Kisi bhi zaban mein baat karo!<br>
-    📎 Photo upload karke edit karwao<br>
-    🎨 "draw a sunset" likh kar image banwao</p>
+<div id="sidebar">
+  <div id="sidebar-header">
+    <button id="new-chat-btn">+ New Chat</button>
   </div>
+  <div id="chat-list"></div>
+  <div id="sidebar-footer">Life-AH by Abuzar ✨</div>
 </div>
-<div id="bottom">
-  <div id="preview-area">
-    <img id="preview-img" src="" alt="preview">
-    <button id="remove-img">x</button>
+<div id="main">
+  <header>
+    <div class="logo">✨</div>
+    <div class="ht"><h1>Life-AH</h1><p>Advanced AI Assistant by Abuzar</p></div>
+    <div class="st"><div class="dot"></div>Online</div>
+  </header>
+  <div id="chat">
+    <div class="wel">
+      <div class="ic">✨</div>
+      <h2>Welcome to Life-AH</h2>
+      <p>Kisi bhi zaban mein baat karo!<br>
+      📎 Photo upload karke edit karwao<br>
+      🎨 "draw a sunset" likh kar image banwao</p>
+    </div>
   </div>
-  <div id="box">
-    <button id="upload-btn">📎</button>
-    <input type="file" id="file-input" accept="image/*">
-    <input id="inp" type="text" placeholder="Kuch bhi likho ya photo upload karo..." autocomplete="off">
-    <button id="btn">
-      <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
-    </button>
+  <div id="bottom">
+    <div id="preview-area">
+      <img id="preview-img" src="" alt="preview">
+      <button id="remove-img">x</button>
+    </div>
+    <div id="box">
+      <button id="upload-btn">📎</button>
+      <input type="file" id="file-input" accept="image/*">
+      <input id="inp" type="text" placeholder="Kuch bhi likho..." autocomplete="off">
+      <button id="btn">
+        <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+      </button>
+    </div>
   </div>
 </div>
 <script>
 var msgList = [];
+var currentSessionId = null;
 var inp = document.getElementById('inp');
 var btn = document.getElementById('btn');
 var chatDiv = document.getElementById('chat');
@@ -90,15 +110,57 @@ var previewArea = document.getElementById('preview-area');
 var previewImg = document.getElementById('preview-img');
 var uploadedImageData = null;
 
-document.getElementById('upload-btn').addEventListener('click', function() {
-  fileInput.click();
-});
+async function loadChats() {
+  try {
+    var r = await fetch('/get_chats');
+    var d = await r.json();
+    var list = document.getElementById('chat-list');
+    list.innerHTML = '';
+    d.chats.forEach(function(c) {
+      var item = document.createElement('div');
+      item.className = 'chat-item' + (c.session_id === currentSessionId ? ' active' : '');
+      item.textContent = c.title || 'New Chat';
+      item.onclick = function() { loadChat(c.session_id, c.title); };
+      list.appendChild(item);
+    });
+  } catch(e) {}
+}
 
+async function loadChat(sessionId, title) {
+  currentSessionId = sessionId;
+  msgList = [];
+  chatDiv.innerHTML = '';
+  try {
+    var r = await fetch('/get_messages/' + sessionId);
+    var d = await r.json();
+    d.messages.forEach(function(m) {
+      addBubble(m.content, m.role === 'user' ? 'user' : 'ai');
+      msgList.push({role: m.role, content: m.content});
+    });
+  } catch(e) {}
+  loadChats();
+}
+
+async function newChat() {
+  try {
+    var r = await fetch('/new_chat', {method: 'POST'});
+    var d = await r.json();
+    currentSessionId = d.session_id;
+    msgList = [];
+    chatDiv.innerHTML = '<div class="wel"><div class="ic">✨</div><h2>New Chat</h2><p>Kuch bhi poochho yaar!</p></div>';
+    loadChats();
+    inp.focus();
+  } catch(e) {}
+}
+
+document.getElementById('new-chat-btn').addEventListener('click', newChat);
+
+document.getElementById('upload-btn').addEventListener('click', function() { fileInput.click(); });
 document.getElementById('remove-img').addEventListener('click', function() {
   uploadedImageData = null;
   previewArea.style.display = 'none';
   previewImg.src = '';
-  inp.placeholder = 'Kuch bhi likho ya photo upload karo...';
+  inp.placeholder = 'Kuch bhi likho...';
 });
 
 fileInput.addEventListener('change', function(e) {
@@ -109,7 +171,7 @@ fileInput.addEventListener('change', function(e) {
     uploadedImageData = ev.target.result;
     previewImg.src = uploadedImageData;
     previewArea.style.display = 'block';
-    inp.placeholder = 'Kya karna hai? e.g. "add snow" ya "make it night"';
+    inp.placeholder = 'Kya karna hai? e.g. "add snow"';
     inp.focus();
   };
   reader.readAsDataURL(file);
@@ -133,9 +195,7 @@ function addBubble(text, role) {
 
 function addImageBubble(prompt) {
   var seed = Math.floor(Math.random() * 99999);
-  var encoded = encodeURIComponent(prompt);
-  var url = 'https://image.pollinations.ai/prompt/' + encoded + '?width=1024&height=1024&model=flux&nologo=true&seed=' + seed;
-
+  var url = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(prompt) + '?width=1024&height=1024&model=flux&nologo=true&seed=' + seed;
   var d = document.createElement('div');
   d.className = 'msg ai';
   var a = document.createElement('div');
@@ -143,12 +203,10 @@ function addImageBubble(prompt) {
   a.textContent = '✨';
   var wrap = document.createElement('div');
   wrap.className = 'imgwrap';
-
   var loading = document.createElement('div');
   loading.className = 'imgload';
   loading.textContent = 'Image generate ho rahi hai... (30-60 sec)';
   wrap.appendChild(loading);
-
   var attempts = 0;
   function tryLoad() {
     attempts++;
@@ -164,13 +222,12 @@ function addImageBubble(prompt) {
         loading.textContent = 'Retry ' + attempts + '/3...';
         setTimeout(tryLoad, 8000);
       } else {
-        loading.innerHTML = 'Image load nahi hui. <a href="' + url + '" target="_blank" style="color:#667eea">Yahan click karo</a>';
+        loading.innerHTML = 'Load nahi hui. <a href="' + url + '" target="_blank" style="color:#667eea">Click karo</a>';
       }
     };
     img.src = url;
   }
   setTimeout(tryLoad, 2000);
-
   d.appendChild(a);
   d.appendChild(wrap);
   chatDiv.appendChild(d);
@@ -188,7 +245,7 @@ function addUserImageBubble(url) {
   wrap.style.background = 'linear-gradient(135deg,#667eea,#764ba2)';
   var img = document.createElement('img');
   img.src = url;
-  img.style.maxHeight = '200px';
+  img.style.maxHeight = '180px';
   img.style.width = 'auto';
   wrap.appendChild(img);
   d.appendChild(a);
@@ -218,11 +275,18 @@ function removeTyping() {
   if (t) t.remove();
 }
 
-function sendMessage() {
+async function sendMessage() {
   var msg = inp.value.trim();
   if (!msg && !uploadedImageData) return;
   var w = document.querySelector('.wel');
   if (w) w.remove();
+
+  if (!currentSessionId) {
+    var r = await fetch('/new_chat', {method: 'POST'});
+    var d = await r.json();
+    currentSessionId = d.session_id;
+    loadChats();
+  }
 
   if (uploadedImageData) {
     addUserImageBubble(uploadedImageData);
@@ -234,38 +298,25 @@ function sendMessage() {
     previewArea.style.display = 'none';
     previewImg.src = '';
     inp.value = '';
-    inp.placeholder = 'Kuch bhi likho ya photo upload karo...';
-
-    fetch('/edit', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({image: imageData, instruction: instruction})
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
+    inp.placeholder = 'Kuch bhi likho...';
+    try {
+      var r = await fetch('/edit', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({image: imageData, instruction: instruction})});
+      var d = await r.json();
       removeTyping();
       addBubble(d.reply, 'ai');
       if (d.image_prompt) addImageBubble(d.image_prompt);
-      inp.focus();
-    })
-    .catch(function() {
+    } catch(e) {
       removeTyping();
-      addBubble('Error aa gaya, dobara try karo.', 'ai');
-    });
-
+      addBubble('Error aa gaya yaar 😅', 'ai');
+    }
   } else {
     inp.value = '';
     addBubble(msg, 'user');
     addTyping();
     msgList.push({role: 'user', content: msg});
-
-    fetch('/chat', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({msgs: msgList})
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
+    try {
+      var r = await fetch('/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({msgs: msgList, session_id: currentSessionId})});
+      var d = await r.json();
       removeTyping();
       if (d.image_prompt) {
         addBubble(d.reply, 'ai');
@@ -274,20 +325,19 @@ function sendMessage() {
         addBubble(d.reply, 'ai');
       }
       msgList.push({role: 'assistant', content: d.reply});
-      inp.focus();
-    })
-    .catch(function() {
+      loadChats();
+    } catch(e) {
       removeTyping();
-      addBubble('Connection error, dobara try karo.', 'ai');
-    });
+      addBubble('Connection error yaar 😅', 'ai');
+    }
   }
+  inp.focus();
 }
 
 btn.addEventListener('click', sendMessage);
-inp.addEventListener('keypress', function(e) {
-  if (e.key === 'Enter') sendMessage();
-});
-inp.focus();
+inp.addEventListener('keypress', function(e) { if (e.key === 'Enter') sendMessage(); });
+loadChats();
+newChat();
 </script>
 </body>
 </html>
