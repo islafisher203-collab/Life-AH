@@ -3,9 +3,43 @@ from flask import Flask, request, jsonify, send_from_directory
 import os
 import random
 import urllib.parse
+import psycopg2
+import json
+from datetime import datetime
 
 client = Groq(api_key=os.environ.get("GROQ_API_KEY", ""))
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
 app = Flask(__name__, static_folder='.')
+
+def get_db():
+    return psycopg2.connect(DATABASE_URL)
+
+def init_db():
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS chats (
+                id SERIAL PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                title TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+            CREATE TABLE IF NOT EXISTS messages (
+                id SERIAL PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                role TEXT NOT NULL,
+                content TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+        """)
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print(f"DB init error: {e}")
+
+init_db()
 
 SYSTEM = """Tu Life-AH hai — Abuzar ka banaya hua AI dost.
 
@@ -32,29 +66,63 @@ LANGUAGE:
 - Urdu script → Urdu script
 - Hindi KABHI NAHI
 
-EXAMPLES:
-User: "hi"
-Tu: "Hiii yaar! Kya haal hai? ❤️"
-
-User: "kaisa hu"
-Tu: "Mast hoon yaar! Tumse baat ho rahi hai toh aur bhi acha lag raha hai 😊 Tum batao, aaj kya scene hai?"
-
-User: "kuch nahi bas bore ho raha tha"
-Tu: "Haha bore? Chal phir mujhse baat kar yaar 😂 Kya karte ho timepass mein generally?"
-
 IMAGE BANANE KE LIYE:
-Agar user image banana maange to bilkul pehli line ye honi chahiye:
 IMAGE_REQUEST: <english description>
-Phir doosri line mein friendly message."""
+<friendly message>"""
 
 @app.route('/')
 def home():
     return send_from_directory('.', 'index.html')
 
+@app.route('/new_chat', methods=['POST'])
+def new_chat():
+    try:
+        session_id = str(random.randint(100000, 999999))
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("INSERT INTO chats (session_id, title) VALUES (%s, %s)", 
+                   (session_id, "New Chat"))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"session_id": session_id})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/get_chats', methods=['GET'])
+def get_chats():
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT session_id, title, created_at FROM chats ORDER BY created_at DESC LIMIT 20")
+        chats = [{"session_id": r[0], "title": r[1], "created_at": str(r[2])} for r in cur.fetchall()]
+        cur.close()
+        conn.close()
+        return jsonify({"chats": chats})
+    except Exception as e:
+        return jsonify({"chats": []})
+
+@app.route('/get_messages/<session_id>', methods=['GET'])
+def get_messages(session_id):
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT role, content FROM messages WHERE session_id = %s ORDER BY created_at", 
+                   (session_id,))
+        msgs = [{"role": r[0], "content": r[1]} for r in cur.fetchall()]
+        cur.close()
+        conn.close()
+        return jsonify({"messages": msgs})
+    except Exception as e:
+        return jsonify({"messages": []})
+
 @app.route('/chat', methods=['POST'])
 def chat():
     data = request.json
     msgs = data.get('msgs', [])
+    session_id = data.get('session_id', '')
+    user_msg = msgs[-1]['content'] if msgs else ''
+    
     full = [{"role": "system", "content": SYSTEM}] + msgs
     r = client.chat.completions.create(
         model="openai/gpt-oss-120b",
@@ -63,10 +131,28 @@ def chat():
     )
     reply = r.choices[0].message.content
     image_prompt = None
+    
     if reply.startswith("IMAGE_REQUEST:"):
         lines = reply.split('\n', 1)
         image_prompt = lines[0].replace("IMAGE_REQUEST:", "").strip()
         reply = lines[1].strip() if len(lines) > 1 else "Lo image ban rahi hai yaar!"
+
+    if session_id:
+        try:
+            conn = get_db()
+            cur = conn.cursor()
+            cur.execute("INSERT INTO messages (session_id, role, content) VALUES (%s, %s, %s)",
+                       (session_id, 'user', user_msg))
+            cur.execute("INSERT INTO messages (session_id, role, content) VALUES (%s, %s, %s)",
+                       (session_id, 'assistant', reply))
+            cur.execute("UPDATE chats SET title = %s WHERE session_id = %s AND title = 'New Chat'",
+                       (user_msg[:40], session_id))
+            conn.commit()
+            cur.close()
+            conn.close()
+        except Exception as e:
+            print(f"DB error: {e}")
+    
     return jsonify({"reply": reply, "image_prompt": image_prompt})
 
 @app.route('/edit', methods=['POST'])
@@ -83,7 +169,7 @@ def edit():
             model="qwen/qwen3.6-27b",
             messages=[{"role": "user", "content": [
                 {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_data}"}},
-                {"type": "text", "text": f"Describe this image in detail then write a new image generation prompt applying: '{instruction}'. Output ONLY the prompt, nothing else."}
+                {"type": "text", "text": f"Describe this image in detail then write a new image generation prompt applying: '{instruction}'. Output ONLY the prompt."}
             ]}],
             max_tokens=400
         )
@@ -92,7 +178,7 @@ def edit():
             new_prompt = new_prompt.split('</think>')[-1].strip()
         return jsonify({"reply": "Lo yaar edited photo! 🎨", "image_prompt": new_prompt})
     except Exception as e:
-        return jsonify({"reply": "Masla aa gaya yaar, dobara try karo 😅", "image_prompt": None})
+        return jsonify({"reply": "Masla aa gaya yaar 😅", "image_prompt": None})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=7860, threaded=True)
