@@ -10,19 +10,18 @@ body{font-family:'Segoe UI',sans-serif;background:#0d0d0d;color:#fff;height:100v
 #sidebar{width:260px;background:#111;border-right:1px solid #222;display:flex;flex-direction:column;flex-shrink:0;transition:width .3s}
 #sidebar.collapsed{width:0;overflow:hidden}
 #sidebar-header{padding:12px;display:flex;gap:8px;border-bottom:1px solid #222}
-#new-chat-btn{flex:1;padding:9px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:8px;color:white;font-size:13px;cursor:pointer;font-weight:600;white-space:nowrap}
+#new-chat-btn{flex:1;padding:9px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:8px;color:white;font-size:13px;cursor:pointer;font-weight:600}
 #chat-list{flex:1;overflow-y:auto;padding:6px}
-.chat-item{padding:9px 10px;border-radius:8px;cursor:pointer;font-size:12px;color:#888;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;justify-content:space-between;group:hover}
+.chat-item{padding:9px 10px;border-radius:8px;cursor:pointer;font-size:12px;color:#888;margin-bottom:3px;display:flex;align-items:center;justify-content:space-between}
 .chat-item:hover{background:#1a1a1a;color:#fff}
 .chat-item.active{background:#1a1a2e;border:1px solid #2d2d5e;color:#fff}
 .chat-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.del-btn{background:none;border:none;color:#444;cursor:pointer;font-size:14px;padding:0 2px;flex-shrink:0;display:none}
+.del-btn{background:none;border:none;color:#444;cursor:pointer;font-size:13px;padding:0 2px;flex-shrink:0;display:none}
 .chat-item:hover .del-btn{display:block;color:#f5576c}
 #sidebar-footer{padding:10px;border-top:1px solid #222;font-size:11px;color:#333;text-align:center}
 #main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 header{padding:12px 16px;background:linear-gradient(135deg,#1a1a2e,#16213e);border-bottom:1px solid #1e3a5f;display:flex;align-items:center;gap:10px;flex-shrink:0}
 #toggle-btn{background:none;border:none;color:#667eea;font-size:20px;cursor:pointer;padding:2px 6px;border-radius:6px}
-#toggle-btn:hover{background:#1a1a2e}
 .logo{width:34px;height:34px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px}
 .ht h1{font-size:17px;font-weight:700;background:linear-gradient(90deg,#667eea,#f093fb);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .ht p{font-size:11px;color:#667eea}
@@ -98,8 +97,8 @@ header{padding:12px 16px;background:linear-gradient(135deg,#1a1a2e,#16213e);bord
     <div id="box">
       <button id="upload-btn">📎</button>
       <input type="file" id="file-input" accept="image/*">
-      <input id="inp" type="text" placeholder="Kuch bhi likho..." autocomplete="off">
-      <button id="btn">
+      <input id="inp" type="text" placeholder="Kuch bhi likho..." autocomplete="off" onkeydown="handleKey(event)">
+      <button id="btn" onclick="sendMessage()">
         <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
       </button>
     </div>
@@ -109,13 +108,19 @@ header{padding:12px 16px;background:linear-gradient(135deg,#1a1a2e,#16213e);bord
 var msgList = [];
 var currentSessionId = null;
 var inp = document.getElementById('inp');
-var btn = document.getElementById('btn');
 var chatDiv = document.getElementById('chat');
 var fileInput = document.getElementById('file-input');
 var previewArea = document.getElementById('preview-area');
 var previewImg = document.getElementById('preview-img');
 var uploadedImageData = null;
 var sidebar = document.getElementById('sidebar');
+
+function handleKey(e) {
+  if (e.keyCode == 13 || e.key == 'Enter') {
+    e.preventDefault();
+    sendMessage();
+  }
+}
 
 document.getElementById('toggle-btn').onclick = function() {
   sidebar.classList.toggle('collapsed');
@@ -127,7 +132,7 @@ async function loadChats() {
     var d = await r.json();
     var list = document.getElementById('chat-list');
     list.innerHTML = '';
-    if (d.chats.length === 0) {
+    if (!d.chats || d.chats.length === 0) {
       list.innerHTML = '<div style="padding:12px;color:#444;font-size:12px;text-align:center">Koi chat nahi abhi</div>';
       return;
     }
@@ -139,12 +144,8 @@ async function loadChats() {
       title.textContent = c.title || 'New Chat';
       var del = document.createElement('button');
       del.className = 'del-btn';
-      del.textContent = '🗑';
-      del.title = 'Delete';
-      del.onclick = function(e) {
-        e.stopPropagation();
-        deleteChat(c.session_id);
-      };
+      del.textContent = 'x';
+      del.onclick = function(e) { e.stopPropagation(); deleteChat(c.session_id); };
       item.appendChild(title);
       item.appendChild(del);
       item.onclick = function() { loadChat(c.session_id); };
@@ -172,13 +173,14 @@ async function loadChat(sessionId) {
   try {
     var r = await fetch('/get_messages/' + sessionId);
     var d = await r.json();
-    if (d.messages.length === 0) {
+    if (!d.messages || d.messages.length === 0) {
       chatDiv.innerHTML = '<div class="wel"><div class="ic">✨</div><h2>Naya Chat</h2><p>Kuch bhi poochho yaar!</p></div>';
+    } else {
+      d.messages.forEach(function(m) {
+        addBubble(m.content, m.role === 'user' ? 'user' : 'ai');
+        msgList.push({role: m.role, content: m.content});
+      });
     }
-    d.messages.forEach(function(m) {
-      addBubble(m.content, m.role === 'user' ? 'user' : 'ai');
-      msgList.push({role: m.role, content: m.content});
-    });
   } catch(e) {}
   loadChats();
   inp.focus();
@@ -188,7 +190,7 @@ async function newChat() {
   try {
     var r = await fetch('/new_chat', {method:'POST', headers:{'Content-Type':'application/json'}});
     var d = await r.json();
-    if (d.error) { console.log('newChat error:', d.error); return; }
+    if (d.error) return;
     currentSessionId = d.session_id;
     msgList = [];
     chatDiv.innerHTML = '<div class="wel"><div class="ic">✨</div><h2>Naya Chat</h2><p>Kuch bhi poochho yaar!</p></div>';
@@ -374,8 +376,6 @@ async function sendMessage() {
   inp.focus();
 }
 
-btn.onclick = sendMessage;
-inp.addEventListener('keypress', function(e) { if (e.key === 'Enter') sendMessage(); });
 loadChats();
 newChat();
 </script>
