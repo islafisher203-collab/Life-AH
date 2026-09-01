@@ -12,11 +12,12 @@ body{font-family:'Segoe UI',sans-serif;background:#0d0d0d;color:#fff;height:100v
 #sidebar-header{padding:12px;display:flex;gap:8px;border-bottom:1px solid #222}
 #new-chat-btn{flex:1;padding:9px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:8px;color:white;font-size:13px;cursor:pointer;font-weight:600}
 #chat-list{flex:1;overflow-y:auto;padding:6px}
-.chat-item{padding:9px 10px;border-radius:8px;cursor:pointer;font-size:12px;color:#888;margin-bottom:3px;display:flex;align-items:center;justify-content:space-between}
+.chat-item{padding:9px 10px;border-radius:8px;cursor:pointer;font-size:12px;color:#888;margin-bottom:3px;display:flex;align-items:center;gap:4px}
 .chat-item:hover{background:#1a1a1a;color:#fff}
 .chat-item.active{background:#1a1a2e;border:1px solid #2d2d5e;color:#fff}
 .chat-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.del-btn{background:none;border:none;color:#444;cursor:pointer;font-size:13px;padding:0 2px;flex-shrink:0;display:none}
+.chat-title-input{flex:1;background:#0d0d0d;border:1px solid #667eea;border-radius:4px;color:#fff;font-size:12px;padding:2px 5px;outline:none}
+.del-btn{background:none;border:none;color:#444;cursor:pointer;font-size:12px;padding:0 2px;flex-shrink:0;display:none}
 .chat-item:hover .del-btn{display:block;color:#f5576c}
 #sidebar-footer{padding:10px;border-top:1px solid #222;font-size:11px;color:#333;text-align:center}
 #main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
@@ -113,7 +114,6 @@ var fileInput = document.getElementById('file-input');
 var previewArea = document.getElementById('preview-area');
 var previewImg = document.getElementById('preview-img');
 var uploadedImageData = null;
-var sidebar = document.getElementById('sidebar');
 
 function handleKey(e) {
   if (e.keyCode == 13 || e.key == 'Enter') {
@@ -123,7 +123,7 @@ function handleKey(e) {
 }
 
 document.getElementById('toggle-btn').onclick = function() {
-  sidebar.classList.toggle('collapsed');
+  document.getElementById('sidebar').classList.toggle('collapsed');
 };
 
 async function loadChats() {
@@ -139,19 +139,43 @@ async function loadChats() {
     d.chats.forEach(function(c) {
       var item = document.createElement('div');
       item.className = 'chat-item' + (c.session_id === currentSessionId ? ' active' : '');
-      var title = document.createElement('span');
-      title.className = 'chat-title';
-      title.textContent = c.title || 'New Chat';
+
+      var titleSpan = document.createElement('span');
+      titleSpan.className = 'chat-title';
+      titleSpan.textContent = c.title || 'New Chat';
+      titleSpan.title = 'Double click to rename';
+      titleSpan.ondblclick = function(e) {
+        e.stopPropagation();
+        var input = document.createElement('input');
+        input.className = 'chat-title-input';
+        input.value = titleSpan.textContent;
+        item.replaceChild(input, titleSpan);
+        input.focus();
+        input.select();
+        function saveTitle() {
+          var newTitle = input.value.trim() || 'New Chat';
+          titleSpan.textContent = newTitle;
+          item.replaceChild(titleSpan, input);
+          fetch('/rename_chat', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({session_id: c.session_id, title: newTitle})});
+        }
+        input.onblur = saveTitle;
+        input.onkeydown = function(e) {
+          if (e.key === 'Enter') saveTitle();
+          if (e.key === 'Escape') { titleSpan.textContent = c.title; item.replaceChild(titleSpan, input); }
+        };
+      };
+
       var del = document.createElement('button');
       del.className = 'del-btn';
       del.textContent = 'x';
       del.onclick = function(e) { e.stopPropagation(); deleteChat(c.session_id); };
-      item.appendChild(title);
+
+      item.appendChild(titleSpan);
       item.appendChild(del);
       item.onclick = function() { loadChat(c.session_id); };
       list.appendChild(item);
     });
-  } catch(e) { console.log('loadChats error:', e); }
+  } catch(e) {}
 }
 
 async function deleteChat(sessionId) {
@@ -196,7 +220,7 @@ async function newChat() {
     chatDiv.innerHTML = '<div class="wel"><div class="ic">✨</div><h2>Naya Chat</h2><p>Kuch bhi poochho yaar!</p></div>';
     loadChats();
     inp.focus();
-  } catch(e) { console.log('newChat error:', e); }
+  } catch(e) {}
 }
 
 document.getElementById('new-chat-btn').onclick = newChat;
@@ -324,12 +348,10 @@ function removeTyping() {
 async function sendMessage() {
   var msg = inp.value.trim();
   if (!msg && !uploadedImageData) return;
-
   if (!currentSessionId) {
     await newChat();
     if (!currentSessionId) return;
   }
-
   if (uploadedImageData) {
     addUserImageBubble(uploadedImageData);
     if (msg) addBubble(msg, 'user');
