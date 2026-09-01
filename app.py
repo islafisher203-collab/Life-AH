@@ -36,7 +36,6 @@ def init_db():
         conn.commit()
         cur.close()
         conn.close()
-        print("DB initialized!")
     except Exception as e:
         print(f"DB init error: {e}")
 
@@ -76,7 +75,7 @@ def new_chat():
         session_id = 'chat_' + str(int(datetime.now().timestamp() * 1000))
         conn = get_db()
         cur = conn.cursor()
-        cur.execute("INSERT INTO chats (session_id, title) VALUES (%s, %s)", 
+        cur.execute("INSERT INTO chats (session_id, title) VALUES (%s, %s)",
                    (session_id, 'New Chat'))
         conn.commit()
         cur.close()
@@ -106,7 +105,7 @@ def get_messages(session_id):
     try:
         conn = get_db()
         cur = conn.cursor()
-        cur.execute("SELECT role, content FROM messages WHERE session_id = %s ORDER BY created_at ASC", 
+        cur.execute("SELECT role, content FROM messages WHERE session_id = %s ORDER BY created_at ASC",
                    (session_id,))
         rows = cur.fetchall()
         cur.close()
@@ -125,6 +124,23 @@ def delete_chat():
         cur = conn.cursor()
         cur.execute("DELETE FROM messages WHERE session_id = %s", (session_id,))
         cur.execute("DELETE FROM chats WHERE session_id = %s", (session_id,))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/rename_chat', methods=['POST'])
+def rename_chat():
+    try:
+        data = request.json
+        session_id = data.get('session_id')
+        new_title = data.get('title', 'New Chat')
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("UPDATE chats SET title = %s WHERE session_id = %s",
+                   (new_title[:50], session_id))
         conn.commit()
         cur.close()
         conn.close()
@@ -162,7 +178,7 @@ def chat():
             cur.execute("INSERT INTO messages (session_id, role, content) VALUES (%s, %s, %s)",
                        (session_id, 'assistant', reply))
             title = user_msg[:40] if user_msg else 'New Chat'
-            cur.execute("UPDATE chats SET title = %s WHERE session_id = %s",
+            cur.execute("UPDATE chats SET title = %s WHERE session_id = %s AND title = 'New Chat'",
                        (title, session_id))
             conn.commit()
             cur.close()
